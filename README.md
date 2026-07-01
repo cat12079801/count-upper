@@ -61,6 +61,60 @@ count_logs   : id, counter_id, user_id, count, logged_on (date), created_at
 - 日単位集計: `count_logs` を `logged_on` で日別 SUM
 - 月単位集計: `logged_on` を月別 SUM
 
+## ディレクトリ構成
+
+```
+src/
+  app/
+    login/            ログイン画面（Google）
+    auth/callback/    OAuth コールバック
+    auth/signout/     ログアウト
+    app/              保護領域（ダッシュボード・サーバアクション）
+  components/         CounterBar / StatsChart / RecordPanel / EmptyState
+  lib/
+    supabase/         server / client / middleware(session更新)
+    date.ts           日付・期間ユーティリティ
+  types/db.ts
+  proxy.ts            ルート保護（Next.js 16 proxy 規約）
+supabase/migrations/  DBスキーマ + RLS
+```
+
+## セットアップ
+
+### 1. Supabase プロジェクト
+
+1. [Supabase](https://supabase.com) で無料プロジェクトを作成する
+2. SQL Editor で `supabase/migrations/0001_init.sql` を実行する
+3. Authentication > Providers で **Google** を有効化する
+   - Google Cloud で OAuth クライアントを作成し、client id / secret を設定する
+   - 承認済みリダイレクト URI に `https://<project-ref>.supabase.co/auth/v1/callback` を追加する
+4. Project Settings > API から `URL` と `anon key` を控える
+
+### 2. 環境変数
+
+`.env.example` を `.env.local` にコピーし、値を設定する。
+
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+### 3. ローカル開発
+
+```
+npm install
+npm run dev
+```
+
+http://localhost:3000 を開く。
+
+### 4. Vercel デプロイ
+
+1. GitHub リポジトリを Vercel に連携する
+2. 環境変数（上記3つ、`NEXT_PUBLIC_SITE_URL` は本番URL）を設定する
+3. Supabase Authentication > URL Configuration に本番URL（`https://<app>.vercel.app/auth/callback`）を追加する
+
 ## ステータス
 
-要件整理フェーズ。実装は未着手。
+MVP 実装済み（認証・カウンター管理・記録・日/月グラフ）。Supabase プロジェクトの接続が必要。
