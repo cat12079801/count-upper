@@ -77,6 +77,7 @@ export function CounterBar({
             <input
               name="name"
               required
+              maxLength={50}
               placeholder="腹筋"
               className="w-32 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
             />
@@ -85,6 +86,7 @@ export function CounterBar({
             <input
               name="unit"
               defaultValue="回"
+              maxLength={10}
               className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
             />
           </Field>
@@ -106,6 +108,7 @@ export function CounterBar({
               <input
                 name="name"
                 required
+                maxLength={50}
                 defaultValue={selected.name}
                 className="w-32 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
               />
@@ -114,6 +117,7 @@ export function CounterBar({
               <input
                 name="unit"
                 defaultValue={selected.unit}
+                maxLength={10}
                 className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
               />
             </Field>

@@ -51,6 +51,7 @@ export function RecordPanel({
               type="number"
               name="count"
               min={1}
+              max={100000}
               inputMode="numeric"
               pattern="[0-9]*"
               value={amount}
