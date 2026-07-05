@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Counter } from "@/types/db";
 import { createCounter, renameCounter, deleteCounter } from "@/app/app/actions";
+import { useFormAction } from "./useFormAction";
 
 export function CounterBar({
   counters,
@@ -20,6 +21,20 @@ export function CounterBar({
 }) {
   const [mode, setMode] = useState<null | "add" | "edit">(null);
   const selected = counters.find((c) => c.id === selectedId);
+
+  const close = () => setMode(null);
+  const add = useFormAction(createCounter, {
+    successMessage: "カウンターを追加した",
+    onSuccess: close,
+  });
+  const rename = useFormAction(renameCounter, {
+    successMessage: "保存した",
+    onSuccess: close,
+  });
+  const remove = useFormAction(deleteCounter, {
+    successMessage: "削除した",
+    onSuccess: close,
+  });
 
   function hrefFor(id: string) {
     const q = new URLSearchParams({
@@ -69,8 +84,7 @@ export function CounterBar({
 
       {mode === "add" && (
         <form
-          action={createCounter}
-          onSubmit={() => setMode(null)}
+          action={add.formAction}
           className="flex flex-wrap items-end gap-2 rounded-xl bg-white p-3 ring-1 ring-neutral-200"
         >
           <Field label="名称">
@@ -90,8 +104,11 @@ export function CounterBar({
               className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
             />
           </Field>
-          <button className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm font-semibold text-white">
-            追加
+          <button
+            disabled={add.pending}
+            className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {add.pending ? "追加中…" : "追加"}
           </button>
         </form>
       )}
@@ -99,8 +116,7 @@ export function CounterBar({
       {mode === "edit" && selected && (
         <div className="flex flex-wrap items-end gap-2 rounded-xl bg-white p-3 ring-1 ring-neutral-200">
           <form
-            action={renameCounter}
-            onSubmit={() => setMode(null)}
+            action={rename.formAction}
             className="flex flex-wrap items-end gap-2"
           >
             <input type="hidden" name="id" value={selected.id} />
@@ -121,23 +137,29 @@ export function CounterBar({
                 className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
               />
             </Field>
-            <button className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm font-semibold text-white">
-              保存
+            <button
+              disabled={rename.pending}
+              className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {rename.pending ? "保存中…" : "保存"}
             </button>
           </form>
           <form
-            action={deleteCounter}
+            action={remove.formAction}
             onSubmit={(e) => {
-              if (!confirm(`「${selected.name}」と記録をすべて削除する。よい？`)) {
+              if (
+                !confirm(`「${selected.name}」と記録をすべて削除する。よい？`)
+              ) {
                 e.preventDefault();
-                return;
               }
-              setMode(null);
             }}
           >
             <input type="hidden" name="id" value={selected.id} />
-            <button className="rounded-full px-4 py-1.5 text-sm font-semibold text-red-600 ring-1 ring-red-200 hover:bg-red-50">
-              削除
+            <button
+              disabled={remove.pending}
+              className="rounded-full px-4 py-1.5 text-sm font-semibold text-red-600 ring-1 ring-red-200 hover:bg-red-50 disabled:opacity-60"
+            >
+              {remove.pending ? "削除中…" : "削除"}
             </button>
           </form>
         </div>
