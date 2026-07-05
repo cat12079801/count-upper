@@ -13,6 +13,7 @@ export function EmptyState() {
           <input
             name="name"
             required
+            maxLength={50}
             placeholder="腕立て伏せ"
             className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none focus:border-accent"
           />
@@ -22,6 +23,7 @@ export function EmptyState() {
           <input
             name="unit"
             defaultValue="回"
+            maxLength={10}
             className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none focus:border-accent"
           />
         </label>
