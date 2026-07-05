@@ -146,6 +146,15 @@ pnpm dlx supabase db push
 
 新しいマイグレーションは `pnpm dlx supabase migration new <name>` で作成する。
 
+## タイムゾーン方針
+
+日付は**ユーザーのローカルタイムゾーン**を基準とする。
+
+- 「今日」の判定はクライアントが権威を持つ（記録フォームの既定値・上限、既定表示月）
+- サーバ（Vercel は UTC 実行）の未来日検証は、いかなる TZ の正当な「今日」も弾かないよう UTC 翌日まで許容する（`maxLoggableDateStr`）
+- 集計は `logged_on` 文字列をそのまま日/月へ分解し、TZ 変換を挟まない
+- 既定表示月は `TodaySync` がユーザーのローカル現在月へ補正する
+
 ## ステータス
 
 MVP 公開済み（https://count-upper.vercel.app ）。認証・カウンター管理・記録・日/月グラフが動作する。今後のタスクは GitHub Issues を参照。
