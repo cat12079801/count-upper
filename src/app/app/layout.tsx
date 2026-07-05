@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ToastProvider } from "@/components/Toast";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 export default async function AppLayout({
   children,
@@ -29,7 +30,7 @@ export default async function AppLayout({
           </div>
         </header>
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6">
-          {children}
+          <PullToRefresh>{children}</PullToRefresh>
         </main>
       </div>
     </ToastProvider>
