@@ -21,7 +21,16 @@ const securityHeaders = [
   },
 ];
 
+// ビルド識別子。スマホで表示中のバージョンを判別しキャッシュ残りを検知するため。
+// Vercel はビルド時に VERCEL_GIT_COMMIT_SHA を提供する。
+const commitSha = (process.env.VERCEL_GIT_COMMIT_SHA ?? "local").slice(0, 7);
+const buildTime = new Date().toISOString();
+
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_COMMIT_SHA: commitSha,
+    NEXT_PUBLIC_BUILD_TIME: buildTime,
+  },
   async headers() {
     return [
       {
