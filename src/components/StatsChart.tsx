@@ -23,6 +23,7 @@ export function StatsChart({
   activeUnits,
   best,
   selectedId,
+  goal,
 }: {
   view: "daily" | "monthly";
   year: number;
@@ -33,11 +34,19 @@ export function StatsChart({
   activeUnits: number;
   best: number;
   selectedId: string;
+  goal?: number | null;
 }) {
   const average = activeUnits > 0 ? total / activeUnits : 0;
   const periodLabel =
     view === "daily" ? ymLabel(year, month) : `${year}年`;
   const activeLabel = view === "daily" ? "記録日数" : "記録月数";
+
+  // 日次目標は日単位ビューで基準として使う（1日あたりの目標のため）
+  const showGoal = view === "daily" && !!goal && goal > 0;
+  // 目標を基準にするため、Y軸上限を目標と最高値の大きい方に合わせる
+  const domainMax = showGoal
+    ? Math.max(Math.ceil((goal as number) * 1.1), best)
+    : undefined;
 
   // X軸に表示する目盛り
   const ticks =
@@ -96,6 +105,7 @@ export function StatsChart({
             <YAxis
               orientation="right"
               width={34}
+              domain={domainMax ? [0, domainMax] : undefined}
               tick={{ fontSize: 11, fill: "#a3a3a3" }}
               axisLine={false}
               tickLine={false}
@@ -114,11 +124,30 @@ export function StatsChart({
                 }}
               />
             )}
+            {showGoal && (
+              <ReferenceLine
+                y={goal as number}
+                stroke="var(--accent)"
+                strokeWidth={1.5}
+                label={{
+                  value: `目標 ${goal}`,
+                  position: "insideTopLeft",
+                  fontSize: 11,
+                  fill: "var(--accent)",
+                }}
+              />
+            )}
             <Bar dataKey="value" radius={[3, 3, 0, 0]} isAnimationActive={false}>
               {data.map((d, i) => (
                 <Cell
                   key={i}
-                  fill={d.value > 0 ? "var(--accent)" : "transparent"}
+                  fill={
+                    d.value <= 0
+                      ? "transparent"
+                      : showGoal && d.value < (goal as number)
+                        ? "#bae6fd"
+                        : "var(--accent)"
+                  }
                 />
               ))}
             </Bar>

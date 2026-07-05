@@ -81,6 +81,7 @@ export function Dashboard({
         activeUnits={agg.activeUnits}
         best={agg.best}
         selectedId={counter.id}
+        goal={counter.daily_goal}
       />
       <RecordPanel
         counter={counter}
