@@ -2,29 +2,29 @@
 
 import { useState } from "react";
 import type { Counter, CountLog } from "@/types/db";
-import { addLog, deleteLog } from "@/app/app/actions";
 import { todayStr } from "@/lib/date";
-import { useFormAction } from "./useFormAction";
+import { SubmitButton } from "./SubmitButton";
 
 export function RecordPanel({
   counter,
   logs,
+  onAdd,
+  onDelete,
 }: {
   counter: Counter;
   logs: CountLog[];
+  onAdd: (formData: FormData) => void | Promise<void>;
+  onDelete: (formData: FormData) => void | Promise<void>;
 }) {
   const [date, setDate] = useState(todayStr());
   const [amount, setAmount] = useState(1);
-  const { formAction, pending } = useFormAction(addLog, {
-    successMessage: "記録した",
-  });
 
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-sm font-bold text-neutral-500">記録する</h2>
 
       <form
-        action={formAction}
+        action={onAdd}
         className="flex flex-wrap items-end gap-3 rounded-2xl bg-white p-4 ring-1 ring-neutral-200"
       >
         <input type="hidden" name="counter_id" value={counter.id} />
@@ -74,12 +74,11 @@ export function RecordPanel({
           </div>
         </label>
 
-        <button
-          disabled={pending}
+        <SubmitButton
+          idle={`＋${amount} 記録`}
+          pending="記録中…"
           className="rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
-        >
-          {pending ? "記録中…" : `＋${amount} 記録`}
-        </button>
+        />
       </form>
 
       {logs.length > 0 && (
@@ -96,29 +95,19 @@ export function RecordPanel({
                   {log.count}
                   {counter.unit}
                 </span>
-                <DeleteLogButton id={log.id} />
+                <form action={onDelete}>
+                  <input type="hidden" name="id" value={log.id} />
+                  <SubmitButton
+                    idle="削除"
+                    pending="…"
+                    className="text-xs text-neutral-400 hover:text-red-600 disabled:opacity-60"
+                  />
+                </form>
               </li>
             ))}
           </ul>
         </div>
       )}
     </section>
-  );
-}
-
-function DeleteLogButton({ id }: { id: string }) {
-  const { formAction, pending } = useFormAction(deleteLog, {
-    successMessage: "削除した",
-  });
-  return (
-    <form action={formAction}>
-      <input type="hidden" name="id" value={id} />
-      <button
-        disabled={pending}
-        className="text-xs text-neutral-400 hover:text-red-600 disabled:opacity-60"
-      >
-        {pending ? "…" : "削除"}
-      </button>
-    </form>
   );
 }
