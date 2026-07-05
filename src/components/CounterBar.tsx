@@ -110,6 +110,14 @@ export function CounterBar({
           >
             {add.pending ? "追加中…" : "追加"}
           </button>
+          <button
+            type="button"
+            onClick={close}
+            disabled={add.pending}
+            className="rounded-full px-4 py-1.5 text-sm font-semibold text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-100 disabled:opacity-60"
+          >
+            キャンセル
+          </button>
         </form>
       )}
 
@@ -142,6 +150,14 @@ export function CounterBar({
               className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
             >
               {rename.pending ? "保存中…" : "保存"}
+            </button>
+            <button
+              type="button"
+              onClick={close}
+              disabled={rename.pending}
+              className="rounded-full px-4 py-1.5 text-sm font-semibold text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-100 disabled:opacity-60"
+            >
+              キャンセル
             </button>
           </form>
           <form
