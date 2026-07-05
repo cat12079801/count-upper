@@ -3,6 +3,7 @@ export type Counter = {
   user_id: string;
   name: string;
   unit: string;
+  daily_goal: number | null; // 1日あたりの目標回数（未設定は null）
   created_at: string;
 };
 

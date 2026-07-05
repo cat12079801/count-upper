@@ -104,6 +104,17 @@ export function CounterBar({
               className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
             />
           </Field>
+          <Field label="日次目標(任意)">
+            <input
+              name="daily_goal"
+              type="number"
+              min={1}
+              max={100000}
+              inputMode="numeric"
+              placeholder="—"
+              className="w-24 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
+            />
+          </Field>
           <button
             disabled={add.pending}
             className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
@@ -143,6 +154,18 @@ export function CounterBar({
                 defaultValue={selected.unit}
                 maxLength={10}
                 className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
+              />
+            </Field>
+            <Field label="日次目標(任意)">
+              <input
+                name="daily_goal"
+                type="number"
+                min={1}
+                max={100000}
+                inputMode="numeric"
+                placeholder="—"
+                defaultValue={selected.daily_goal ?? ""}
+                className="w-24 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
               />
             </Field>
             <button

@@ -36,6 +36,19 @@ function isValidLoggableDate(s: string): boolean {
 
 const GENERIC_ERROR = "処理に失敗しました。時間をおいて再度お試しください。";
 
+// 日次目標（任意）のパース。空は null、それ以外は 1..MAX_COUNT の整数。
+function parseDailyGoal(
+  formData: FormData,
+): { ok: true; value: number | null } | { ok: false; error: string } {
+  const raw = String(formData.get("daily_goal") ?? "").trim();
+  if (raw === "") return { ok: true, value: null };
+  const g = Math.floor(Number(raw));
+  if (!Number.isFinite(g) || g <= 0 || g > MAX_COUNT) {
+    return { ok: false, error: "目標は1以上の数値で入力してください。" };
+  }
+  return { ok: true, value: g };
+}
+
 export async function createCounter(
   _prev: ActionResult | null,
   formData: FormData,
@@ -49,12 +62,14 @@ export async function createCounter(
   if (unit.length > MAX_UNIT_LEN) {
     return { ok: false, error: `単位は${MAX_UNIT_LEN}文字以内で入力してください。` };
   }
+  const goal = parseDailyGoal(formData);
+  if (!goal.ok) return goal;
 
   try {
     const { supabase, user } = await requireUser();
     const { error } = await supabase
       .from("counters")
-      .insert({ user_id: user.id, name, unit });
+      .insert({ user_id: user.id, name, unit, daily_goal: goal.value });
     if (error) return { ok: false, error: GENERIC_ERROR };
     revalidatePath("/app");
     return { ok: true };
@@ -75,12 +90,14 @@ export async function renameCounter(
   if (name.length > MAX_NAME_LEN || unit.length > MAX_UNIT_LEN) {
     return { ok: false, error: "名称または単位が長すぎます。" };
   }
+  const goal = parseDailyGoal(formData);
+  if (!goal.ok) return goal;
 
   try {
     const { supabase } = await requireUser();
     const { error } = await supabase
       .from("counters")
-      .update({ name, unit })
+      .update({ name, unit, daily_goal: goal.value })
       .eq("id", id);
     if (error) return { ok: false, error: GENERIC_ERROR };
     revalidatePath("/app");
