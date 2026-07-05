@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 
@@ -10,12 +10,22 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "count-upper",
   description: "日々の数えたい何かをカウントし、記録・可視化するアプリ",
+  applicationName: "count-upper",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "count-upper",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "#38bdf8",
 };
 
 export default function RootLayout({
