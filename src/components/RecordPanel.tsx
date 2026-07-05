@@ -51,6 +51,8 @@ export function RecordPanel({
               type="number"
               name="count"
               min={1}
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={amount}
               onChange={(e) =>
                 setAmount(Math.max(1, Math.floor(Number(e.target.value) || 1)))
