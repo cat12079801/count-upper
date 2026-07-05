@@ -105,9 +105,11 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ### 3. ローカル開発
 
 ```
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
+
+> パッケージマネージャは pnpm（`packageManager` フィールドで固定）。Corepack を有効化（`corepack enable`）すれば自動で適切なバージョンが使われる。
 
 http://localhost:3000 を開く。
 
@@ -138,11 +140,11 @@ http://localhost:3000 を開く。
 ### ローカルでの手動適用
 
 ```
-npx supabase link --project-ref zssprbyaxjosxbkabsbt
-npx supabase db push
+pnpm dlx supabase link --project-ref zssprbyaxjosxbkabsbt
+pnpm dlx supabase db push
 ```
 
-新しいマイグレーションは `npx supabase migration new <name>` で作成する。
+新しいマイグレーションは `pnpm dlx supabase migration new <name>` で作成する。
 
 ## ステータス
 
