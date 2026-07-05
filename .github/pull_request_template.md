@@ -7,8 +7,8 @@
 
 ## 確認
 <!-- 動作確認・テスト結果 -->
-- [ ] `npm run lint` が通る
-- [ ] `npm run build` が通る
+- [ ] `pnpm lint` が通る
+- [ ] `pnpm build` が通る
 - [ ] ローカル or 本番で動作確認した
 
 ## 関連 Issue
