@@ -146,6 +146,28 @@ pnpm dlx supabase db push
 
 新しいマイグレーションは `pnpm dlx supabase migration new <name>` で作成する。
 
+## E2E テスト
+
+主要フロー（ログイン→カウンター作成→記録→グラフ反映→削除→バリデーションエラー）を Playwright で検証する（#46）。
+
+実 Google アカウントでの自動ログインは不安定なため、テスト時のみメール/パスワードでサインインする。バックエンドはローカル Supabase を使う。
+
+- **サインイン経路**: テスト専用ルート `/auth/test-login`（`src/app/auth/test-login/route.ts`）。`E2E_TEST_LOGIN==="true"` かつ `NODE_ENV!=="production"` のときだけ動作し、それ以外は 404 を返す。本番 Vercel には `E2E_TEST_LOGIN` を設定しないこと。
+- **セッション再利用**: `e2e/auth.setup.ts` が上記ルートでサインインし `storageState` を保存する。各テストは認証済み状態から始まる。
+- dev サーバで動かす（テスト専用ルートを production では無効化しているため）。
+
+### ローカル実行
+
+```
+cp .env.e2e.example .env.e2e   # supabase の値を記入する
+pnpm dlx supabase start        # ローカル Supabase 起動（マイグレーション適用込み）
+pnpm dlx supabase status -o env  # ANON_KEY / API_URL を .env.e2e に反映
+pnpm exec playwright install chromium
+pnpm test:e2e                  # または pnpm test:e2e:ui
+```
+
+CI は `.github/workflows/e2e.yml` で独立ジョブとして実行する（ローカル Supabase を起動し、失敗時は `playwright-report` を artifact 化）。
+
 ## タイムゾーン方針
 
 日付は**ユーザーのローカルタイムゾーン**を基準とする。
