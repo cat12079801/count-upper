@@ -5,6 +5,7 @@ import type { ViewMode } from "@/lib/aggregate";
 import { CounterBar } from "@/components/CounterBar";
 import { EmptyState } from "@/components/EmptyState";
 import { Dashboard } from "@/components/Dashboard";
+import { TodaySync } from "@/components/TodaySync";
 
 type SearchParams = {
   c?: string;
@@ -52,6 +53,7 @@ export default async function AppPage({
 
   return (
     <div className="flex flex-col gap-8">
+      <TodaySync serverYear={year} serverMonth={month} />
       <CounterBar
         counters={counters}
         selectedId={selected.id}

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { todayStr } from "@/lib/date";
+import { maxLoggableDateStr } from "@/lib/date";
 
 // サーバアクションの結果型。呼び出し側で成功/失敗を判定する。
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -21,15 +21,17 @@ async function requireUser() {
   return { supabase, user };
 }
 
-// YYYY-MM-DD 形式かつ実在する日付で、未来日でないこと（ローカル基準）
-function isValidPastDate(s: string): boolean {
+// YYYY-MM-DD 形式かつ実在する日付で、過度な未来日でないこと。
+// 「今日」の判定はユーザーのローカル TZ に依存するため、サーバでは UTC 翌日までを
+// 許容し、いかなる TZ の正当な「今日」も弾かないようにする（TZ 方針: #5）。
+function isValidLoggableDate(s: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
   const [y, m, d] = s.split("-").map(Number);
   const dt = new Date(y, m - 1, d);
   if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) {
     return false;
   }
-  return s <= todayStr();
+  return s <= maxLoggableDateStr();
 }
 
 const GENERIC_ERROR = "処理に失敗しました。時間をおいて再度お試しください。";
@@ -122,7 +124,7 @@ export async function addLog(
   if (count > MAX_COUNT) {
     return { ok: false, error: `回数は${MAX_COUNT.toLocaleString()}以下で入力してください。` };
   }
-  if (!isValidPastDate(loggedOn)) {
+  if (!isValidLoggableDate(loggedOn)) {
     return { ok: false, error: "日付が不正です（未来日は指定できません）。" };
   }
 
