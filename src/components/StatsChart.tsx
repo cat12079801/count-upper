@@ -11,8 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { ymLabel } from "@/lib/date";
-
-export type ChartDatum = { label: string; value: number };
+import type { ChartDatum } from "@/lib/aggregate";
 
 export function StatsChart({
   view,
