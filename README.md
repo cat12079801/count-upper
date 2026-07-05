@@ -86,7 +86,7 @@ supabase/migrations/  DBスキーマ + RLS
 ### 1. Supabase プロジェクト
 
 1. [Supabase](https://supabase.com) で無料プロジェクトを作成する
-2. SQL Editor で `supabase/migrations/0001_init.sql` を実行する
+2. `supabase/migrations/` のマイグレーションを適用する（後述「DB マイグレーション」）
 3. Authentication > Providers で **Google** を有効化する
    - Google Cloud で OAuth クライアントを作成し、client id / secret を設定する
    - 承認済みリダイレクト URI に `https://<project-ref>.supabase.co/auth/v1/callback` を追加する
@@ -116,6 +116,33 @@ http://localhost:3000 を開く。
 1. GitHub リポジトリを Vercel に連携する
 2. 環境変数（上記3つ、`NEXT_PUBLIC_SITE_URL` は本番URL）を設定する
 3. Supabase Authentication > URL Configuration に本番URL（`https://<app>.vercel.app/auth/callback`）を追加する
+
+## DB マイグレーション
+
+マイグレーションは `supabase/migrations/<timestamp>_name.sql` に置く。適用は [Supabase CLI](https://supabase.com/docs/guides/cli) で行い、main へマージすると CI（`.github/workflows/db-migrate.yml`）が自動適用する。
+
+### CI 自動適用に必要な設定（初回のみ）
+
+1. Supabase で **Access Token** を発行（Account > Access Tokens）
+2. GitHub リポジトリの Secrets に登録
+   - `SUPABASE_ACCESS_TOKEN`: 上記トークン
+   - `SUPABASE_DB_PASSWORD`: プロジェクト作成時の DB パスワード
+3. 既存スキーマを CLI 管理下へ移す **ベースライン**（`0001` 相当を手動適用済みのため一度だけ必要）
+   ```
+   export SUPABASE_ACCESS_TOKEN=... SUPABASE_DB_PASSWORD=...
+   supabase link --project-ref zssprbyaxjosxbkabsbt
+   supabase migration repair --status applied 20260701000000
+   supabase db push   # 20260705000000_hardening 以降が適用される
+   ```
+
+### ローカルでの手動適用
+
+```
+npx supabase link --project-ref zssprbyaxjosxbkabsbt
+npx supabase db push
+```
+
+新しいマイグレーションは `npx supabase migration new <name>` で作成する。
 
 ## ステータス
 
