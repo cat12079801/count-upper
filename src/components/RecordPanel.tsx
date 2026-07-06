@@ -17,15 +17,11 @@ export function RecordPanel({
   onDelete: (formData: FormData) => void | Promise<void>;
 }) {
   const [date, setDate] = useState(todayStr());
-  // 空を既定にし、プレースホルダで 1 を示す。空のまま記録すると 1 として扱う。
+  // 空を既定にし、プレースホルダで 1 を示す。空のままは記録不可（required）。
   const [amount, setAmount] = useState("");
-  const effective = amount === "" ? 1 : Math.max(1, Math.floor(Number(amount)));
+  const parsed = amount === "" ? 0 : Math.max(1, Math.floor(Number(amount)));
 
-  // 空のまま送信されたら count=1 を補って委譲する
   async function handleAdd(formData: FormData) {
-    if (String(formData.get("count") ?? "").trim() === "") {
-      formData.set("count", "1");
-    }
     await onAdd(formData);
     setAmount("");
   }
@@ -57,7 +53,7 @@ export function RecordPanel({
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setAmount(String(Math.max(1, effective - 1)))}
+              onClick={() => setAmount(String(Math.max(1, parsed - 1)))}
               className="h-9 w-9 rounded-lg text-lg font-bold text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-100"
             >
               −
@@ -65,6 +61,7 @@ export function RecordPanel({
             <input
               type="number"
               name="count"
+              required
               min={1}
               max={100000}
               inputMode="numeric"
@@ -82,7 +79,7 @@ export function RecordPanel({
             />
             <button
               type="button"
-              onClick={() => setAmount(String(Math.min(100000, effective + 1)))}
+              onClick={() => setAmount(String(Math.min(100000, parsed + 1)))}
               className="h-9 w-9 rounded-lg text-lg font-bold text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-100"
             >
               ＋
@@ -91,7 +88,7 @@ export function RecordPanel({
         </label>
 
         <SubmitButton
-          idle={`＋${effective} 記録`}
+          idle={amount === "" ? "記録" : `＋${parsed} 記録`}
           pending="記録中…"
           className="rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
         />
