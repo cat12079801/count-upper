@@ -62,6 +62,7 @@ export function RecordPanel({
               onChange={(e) =>
                 setAmount(Math.max(1, Math.floor(Number(e.target.value) || 1)))
               }
+              onFocus={(e) => e.target.select()}
               className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-center text-sm outline-none focus:border-accent"
             />
             <button
