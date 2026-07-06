@@ -44,7 +44,7 @@ export function RecordPanel({
             value={date}
             max={todayStr()}
             onChange={(e) => setDate(e.target.value)}
-            className="rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
+            className="rounded-lg border border-neutral-300 px-2 py-1.5 outline-none focus:border-accent"
           />
         </label>
 
@@ -75,7 +75,7 @@ export function RecordPanel({
                 if (!Number.isFinite(n)) return;
                 setAmount(String(Math.min(100000, Math.max(1, n))));
               }}
-              className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-center text-sm outline-none focus:border-accent"
+              className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-center outline-none focus:border-accent"
             />
             <button
               type="button"

@@ -93,7 +93,7 @@ export function CounterBar({
               required
               maxLength={50}
               placeholder="腹筋"
-              className="w-32 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
+              className="w-32 rounded-lg border border-neutral-300 px-2 py-1.5 outline-none focus:border-accent"
             />
           </Field>
           <Field label="単位">
@@ -101,7 +101,7 @@ export function CounterBar({
               name="unit"
               defaultValue="回"
               maxLength={10}
-              className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
+              className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 outline-none focus:border-accent"
             />
           </Field>
           <Field label="日次目標(任意)">
@@ -112,7 +112,7 @@ export function CounterBar({
               max={100000}
               inputMode="numeric"
               placeholder="—"
-              className="w-24 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
+              className="w-24 rounded-lg border border-neutral-300 px-2 py-1.5 outline-none focus:border-accent"
             />
           </Field>
           <button
@@ -145,7 +145,7 @@ export function CounterBar({
                 required
                 maxLength={50}
                 defaultValue={selected.name}
-                className="w-32 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
+                className="w-32 rounded-lg border border-neutral-300 px-2 py-1.5 outline-none focus:border-accent"
               />
             </Field>
             <Field label="単位">
@@ -153,7 +153,7 @@ export function CounterBar({
                 name="unit"
                 defaultValue={selected.unit}
                 maxLength={10}
-                className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
+                className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 outline-none focus:border-accent"
               />
             </Field>
             <Field label="日次目標(任意)">
@@ -165,7 +165,7 @@ export function CounterBar({
                 inputMode="numeric"
                 placeholder="—"
                 defaultValue={selected.daily_goal ?? ""}
-                className="w-24 rounded-lg border border-neutral-300 px-2 py-1.5 text-sm outline-none focus:border-accent"
+                className="w-24 rounded-lg border border-neutral-300 px-2 py-1.5 outline-none focus:border-accent"
               />
             </Field>
             <button

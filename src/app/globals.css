@@ -16,3 +16,17 @@
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/*
+ * フォーム部品の既定フォントは 16px 以上にする。
+ * iOS Safari はフォーカスしたフォーム部品のフォントが 16px 未満だと自動ズームするため、
+ * 意図しないズームを防ぐ（viewport の拡大制限は解除したまま＝a11y 維持）。
+ * 各 input には text-* utility を付けないこと（付けると base 層より優先され再発する）。
+ */
+@layer base {
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+}
