@@ -17,14 +17,25 @@ export function RecordPanel({
   onDelete: (formData: FormData) => void | Promise<void>;
 }) {
   const [date, setDate] = useState(todayStr());
-  const [amount, setAmount] = useState(1);
+  // 空を既定にし、プレースホルダで 1 を示す。空のまま記録すると 1 として扱う。
+  const [amount, setAmount] = useState("");
+  const effective = amount === "" ? 1 : Math.max(1, Math.floor(Number(amount)));
+
+  // 空のまま送信されたら count=1 を補って委譲する
+  async function handleAdd(formData: FormData) {
+    if (String(formData.get("count") ?? "").trim() === "") {
+      formData.set("count", "1");
+    }
+    await onAdd(formData);
+    setAmount("");
+  }
 
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-sm font-bold text-neutral-500">記録する</h2>
 
       <form
-        action={onAdd}
+        action={handleAdd}
         className="flex flex-wrap items-end gap-3 rounded-2xl bg-white p-4 ring-1 ring-neutral-200"
       >
         <input type="hidden" name="counter_id" value={counter.id} />
@@ -46,7 +57,7 @@ export function RecordPanel({
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => setAmount((a) => Math.max(1, a - 1))}
+              onClick={() => setAmount(String(Math.max(1, effective - 1)))}
               className="h-9 w-9 rounded-lg text-lg font-bold text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-100"
             >
               −
@@ -58,16 +69,20 @@ export function RecordPanel({
               max={100000}
               inputMode="numeric"
               pattern="[0-9]*"
+              placeholder="1"
               value={amount}
-              onChange={(e) =>
-                setAmount(Math.max(1, Math.floor(Number(e.target.value) || 1)))
-              }
-              onFocus={(e) => e.target.select()}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v === "") return setAmount("");
+                const n = Math.floor(Number(v));
+                if (!Number.isFinite(n)) return;
+                setAmount(String(Math.min(100000, Math.max(1, n))));
+              }}
               className="w-20 rounded-lg border border-neutral-300 px-2 py-1.5 text-center text-sm outline-none focus:border-accent"
             />
             <button
               type="button"
-              onClick={() => setAmount((a) => a + 1)}
+              onClick={() => setAmount(String(Math.min(100000, effective + 1)))}
               className="h-9 w-9 rounded-lg text-lg font-bold text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-100"
             >
               ＋
@@ -76,7 +91,7 @@ export function RecordPanel({
         </label>
 
         <SubmitButton
-          idle={`＋${amount} 記録`}
+          idle={`＋${effective} 記録`}
           pending="記録中…"
           className="rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
         />
