@@ -30,3 +30,14 @@ body {
     font-size: 1rem;
   }
 }
+
+/*
+ * グラフ(Recharts)の accessibilityLayer は svg をフォーカス可能にするため、
+ * タップ/クリックでも青いフォーカス枠が出る。キーボード操作(:focus-visible)の
+ * 表示は残しつつ、ポインタ操作時の枠のみ抑止する。
+ */
+.recharts-wrapper:focus:not(:focus-visible),
+.recharts-surface:focus:not(:focus-visible),
+.recharts-wrapper *:focus:not(:focus-visible) {
+  outline: none;
+}
