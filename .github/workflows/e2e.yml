@@ -1,0 +1,70 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# 同一ブランチの古い実行はキャンセルする（ブラウザ取得コストの無駄を避ける）
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      # ローカル Supabase の CLI バージョンを固定する
+      SUPABASE_CLI_VERSION: "2.109.0"
+      # E2E 用のテストユーザー認証情報とテスト専用ルートの有効化
+      E2E_TEST_LOGIN: "true"
+      E2E_TEST_EMAIL: e2e@example.com
+      E2E_TEST_PASSWORD: e2e-password-123
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start local Supabase
+        # config.toml に従いローカルスタックを起動する。起動時にマイグレーションが適用される。
+        run: pnpm dlx "supabase@${SUPABASE_CLI_VERSION}" start
+
+      - name: Export Supabase env
+        # 起動したローカル Supabase の URL / anon key を後続ステップの環境変数へ渡す。
+        run: |
+          eval "$(pnpm dlx "supabase@${SUPABASE_CLI_VERSION}" status -o env)"
+          echo "NEXT_PUBLIC_SUPABASE_URL=${API_URL}" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}" >> "$GITHUB_ENV"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        # ロックファイル（Playwright のバージョンを含む）が変わったら再取得する
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
