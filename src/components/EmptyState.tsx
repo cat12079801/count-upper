@@ -22,7 +22,7 @@ export function EmptyState() {
             required
             maxLength={50}
             placeholder="腕立て伏せ"
-            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none focus:border-accent"
+            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-neutral-900 outline-none focus:border-accent"
           />
         </label>
         <label className="text-xs font-medium text-neutral-500">
@@ -31,7 +31,7 @@ export function EmptyState() {
             name="unit"
             defaultValue="回"
             maxLength={10}
-            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 outline-none focus:border-accent"
+            className="mt-1 w-full rounded-lg border border-neutral-300 px-3 py-2 text-neutral-900 outline-none focus:border-accent"
           />
         </label>
         <button
