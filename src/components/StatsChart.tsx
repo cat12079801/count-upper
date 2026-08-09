@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   Bar,
   BarChart,
@@ -11,7 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { ymLabel } from "@/lib/date";
-import type { ChartDatum } from "@/lib/aggregate";
+import type { ChartDatum, ViewMode } from "@/lib/aggregate";
 
 export function StatsChart({
   view,
@@ -22,8 +21,9 @@ export function StatsChart({
   total,
   activeUnits,
   best,
-  selectedId,
   goal,
+  onChangeView,
+  onShift,
 }: {
   view: "daily" | "monthly";
   year: number;
@@ -33,8 +33,9 @@ export function StatsChart({
   total: number;
   activeUnits: number;
   best: number;
-  selectedId: string;
   goal?: number | null;
+  onChangeView: (view: ViewMode) => void;
+  onShift: (delta: number) => void;
 }) {
   const average = activeUnits > 0 ? total / activeUnits : 0;
   const periodLabel =
@@ -57,14 +58,8 @@ export function StatsChart({
   return (
     <section className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
-        <ViewTabs view={view} year={year} month={month} selectedId={selectedId} />
-        <PeriodNav
-          view={view}
-          year={year}
-          month={month}
-          selectedId={selectedId}
-          label={periodLabel}
-        />
+        <ViewTabs view={view} onChangeView={onChangeView} />
+        <PeriodNav label={periodLabel} onShift={onShift} />
       </div>
 
       <div>
@@ -184,39 +179,30 @@ function Stat({
 
 function ViewTabs({
   view,
-  year,
-  month,
-  selectedId,
+  onChangeView,
 }: {
   view: "daily" | "monthly";
-  year: number;
-  month: number;
-  selectedId: string;
+  onChangeView: (view: ViewMode) => void;
 }) {
-  const tabs: { key: "daily" | "monthly"; label: string }[] = [
+  const tabs: { key: ViewMode; label: string }[] = [
     { key: "daily", label: "月" },
     { key: "monthly", label: "年" },
   ];
   return (
     <div className="inline-flex rounded-full bg-neutral-200/70 p-0.5">
       {tabs.map((t) => {
-        const q = new URLSearchParams({
-          c: selectedId,
-          view: t.key,
-          y: String(year),
-          m: String(month),
-        });
         const active = t.key === view;
         return (
-          <Link
+          <button
             key={t.key}
-            href={`/app?${q.toString()}`}
+            type="button"
+            onClick={() => onChangeView(t.key)}
             className={`rounded-full px-5 py-1 text-sm font-semibold transition ${
               active ? "bg-white shadow-sm" : "text-neutral-500"
             }`}
           >
             {t.label}
-          </Link>
+          </button>
         );
       })}
     </div>
@@ -224,59 +210,31 @@ function ViewTabs({
 }
 
 function PeriodNav({
-  view,
-  year,
-  month,
-  selectedId,
   label,
+  onShift,
 }: {
-  view: "daily" | "monthly";
-  year: number;
-  month: number;
-  selectedId: string;
   label: string;
+  onShift: (delta: number) => void;
 }) {
-  function shift(delta: number) {
-    let y = year;
-    let m = month;
-    if (view === "daily") {
-      m += delta;
-      if (m < 1) {
-        m = 12;
-        y -= 1;
-      } else if (m > 12) {
-        m = 1;
-        y += 1;
-      }
-    } else {
-      y += delta;
-    }
-    const q = new URLSearchParams({
-      c: selectedId,
-      view,
-      y: String(y),
-      m: String(m),
-    });
-    return `/app?${q.toString()}`;
-  }
-
   return (
     <div className="flex items-center gap-2 text-sm">
-      <Link
-        href={shift(-1)}
+      <button
+        type="button"
+        onClick={() => onShift(-1)}
         className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-200"
         aria-label="前へ"
       >
         ‹
-      </Link>
+      </button>
       <span className="min-w-24 text-center font-semibold">{label}</span>
-      <Link
-        href={shift(1)}
+      <button
+        type="button"
+        onClick={() => onShift(1)}
         className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-200"
         aria-label="次へ"
       >
         ›
-      </Link>
+      </button>
     </div>
   );
 }

@@ -1,49 +1,64 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { Counter } from "@/types/db";
-import { createCounter, renameCounter, deleteCounter } from "@/app/app/actions";
-import { useFormAction } from "./useFormAction";
+import type { CounterInput } from "@/lib/useAppData";
+import { SubmitButton } from "./SubmitButton";
+
+type Result = { ok: boolean };
+
+// 日次目標の入力（空文字）を number|null に変換する。範囲検証はサーバで行う。
+function parseGoal(raw: FormDataEntryValue | null): number | null {
+  const s = String(raw ?? "").trim();
+  if (s === "") return null;
+  const n = Math.floor(Number(s));
+  return Number.isFinite(n) ? n : null;
+}
 
 export function CounterBar({
   counters,
   selectedId,
-  view,
-  year,
-  month,
+  onSelect,
+  onCreate,
+  onUpdate,
+  onDelete,
 }: {
   counters: Counter[];
   selectedId: string;
-  view: "daily" | "monthly";
-  year: number;
-  month: number;
+  onSelect: (id: string) => void;
+  onCreate: (input: CounterInput) => Promise<Result>;
+  onUpdate: (input: CounterInput & { id: string }) => Promise<Result>;
+  onDelete: (id: string) => Promise<Result>;
 }) {
   const [mode, setMode] = useState<null | "add" | "edit">(null);
   const selected = counters.find((c) => c.id === selectedId);
-
   const close = () => setMode(null);
-  const add = useFormAction(createCounter, {
-    successMessage: "カウンターを追加した",
-    onSuccess: close,
-  });
-  const rename = useFormAction(renameCounter, {
-    successMessage: "保存した",
-    onSuccess: close,
-  });
-  const remove = useFormAction(deleteCounter, {
-    successMessage: "削除した",
-    onSuccess: close,
-  });
 
-  function hrefFor(id: string) {
-    const q = new URLSearchParams({
-      c: id,
-      view,
-      y: String(year),
-      m: String(month),
+  async function handleAdd(formData: FormData) {
+    const res = await onCreate({
+      name: String(formData.get("name") ?? ""),
+      unit: String(formData.get("unit") ?? "回"),
+      dailyGoal: parseGoal(formData.get("daily_goal")),
     });
-    return `/app?${q.toString()}`;
+    if (res.ok) close();
+  }
+
+  async function handleRename(formData: FormData) {
+    if (!selected) return;
+    const res = await onUpdate({
+      id: selected.id,
+      name: String(formData.get("name") ?? ""),
+      unit: String(formData.get("unit") ?? "回"),
+      dailyGoal: parseGoal(formData.get("daily_goal")),
+    });
+    if (res.ok) close();
+  }
+
+  async function handleDelete(formData: FormData) {
+    const id = String(formData.get("id") ?? "");
+    if (!id) return;
+    const res = await onDelete(id);
+    if (res.ok) close();
   }
 
   return (
@@ -52,9 +67,11 @@ export function CounterBar({
         {counters.map((c) => {
           const active = c.id === selectedId;
           return (
-            <Link
+            <button
               key={c.id}
-              href={hrefFor(c.id)}
+              type="button"
+              onClick={() => onSelect(c.id)}
+              aria-pressed={active}
               className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                 active
                   ? "bg-neutral-900 text-white"
@@ -62,10 +79,11 @@ export function CounterBar({
               }`}
             >
               {c.name}
-            </Link>
+            </button>
           );
         })}
         <button
+          type="button"
           onClick={() => setMode(mode === "add" ? null : "add")}
           className="rounded-full px-3 py-1.5 text-sm font-semibold text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-100"
           aria-label="カウンターを追加"
@@ -74,6 +92,7 @@ export function CounterBar({
         </button>
         {selected && (
           <button
+            type="button"
             onClick={() => setMode(mode === "edit" ? null : "edit")}
             className="text-xs font-medium text-neutral-400 hover:text-neutral-700"
           >
@@ -84,7 +103,7 @@ export function CounterBar({
 
       {mode === "add" && (
         <form
-          action={add.formAction}
+          action={handleAdd}
           className="flex flex-wrap items-end gap-2 rounded-xl bg-white p-3 ring-1 ring-neutral-200"
         >
           <Field label="名称">
@@ -115,16 +134,14 @@ export function CounterBar({
               className="w-24 rounded-lg border border-neutral-300 px-2 py-1.5 outline-none focus:border-accent"
             />
           </Field>
-          <button
-            disabled={add.pending}
+          <SubmitButton
+            idle="追加"
+            pending="追加中…"
             className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {add.pending ? "追加中…" : "追加"}
-          </button>
+          />
           <button
             type="button"
             onClick={close}
-            disabled={add.pending}
             className="rounded-full px-4 py-1.5 text-sm font-semibold text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-100 disabled:opacity-60"
           >
             キャンセル
@@ -134,11 +151,7 @@ export function CounterBar({
 
       {mode === "edit" && selected && (
         <div className="flex flex-wrap items-end gap-2 rounded-xl bg-white p-3 ring-1 ring-neutral-200">
-          <form
-            action={rename.formAction}
-            className="flex flex-wrap items-end gap-2"
-          >
-            <input type="hidden" name="id" value={selected.id} />
+          <form action={handleRename} className="flex flex-wrap items-end gap-2">
             <Field label="名称">
               <input
                 name="name"
@@ -168,38 +181,33 @@ export function CounterBar({
                 className="w-24 rounded-lg border border-neutral-300 px-2 py-1.5 outline-none focus:border-accent"
               />
             </Field>
-            <button
-              disabled={rename.pending}
+            <SubmitButton
+              idle="保存"
+              pending="保存中…"
               className="rounded-full bg-neutral-900 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {rename.pending ? "保存中…" : "保存"}
-            </button>
+            />
             <button
               type="button"
               onClick={close}
-              disabled={rename.pending}
               className="rounded-full px-4 py-1.5 text-sm font-semibold text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-100 disabled:opacity-60"
             >
               キャンセル
             </button>
           </form>
           <form
-            action={remove.formAction}
+            action={handleDelete}
             onSubmit={(e) => {
-              if (
-                !confirm(`「${selected.name}」と記録をすべて削除する。よい？`)
-              ) {
+              if (!confirm(`「${selected.name}」と記録をすべて削除する。よい？`)) {
                 e.preventDefault();
               }
             }}
           >
             <input type="hidden" name="id" value={selected.id} />
-            <button
-              disabled={remove.pending}
+            <SubmitButton
+              idle="削除"
+              pending="削除中…"
               className="rounded-full px-4 py-1.5 text-sm font-semibold text-red-600 ring-1 ring-red-200 hover:bg-red-50 disabled:opacity-60"
-            >
-              {remove.pending ? "削除中…" : "削除"}
-            </button>
+            />
           </form>
         </div>
       )}

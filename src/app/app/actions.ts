@@ -1,11 +1,14 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { maxLoggableDateStr } from "@/lib/date";
+import type { Counter, CountLog } from "@/types/db";
 
-// サーバアクションの結果型。呼び出し側で成功/失敗を判定する。
-export type ActionResult = { ok: true } | { ok: false; error: string };
+// サーバアクションの結果型。成功時は影響行を返し、クライアントのローカルキャッシュを
+// 全再取得なしで整合できるようにする。
+export type Ok<T> = { ok: true } & T;
+export type Err = { ok: false; error: string };
+export type ActionResult<T = Record<never, never>> = Ok<T> | Err;
 
 // 入力の上限（サーバ側で強制する。UI 制約はバイパス可能なため）
 const MAX_COUNT = 100_000;
@@ -36,12 +39,11 @@ function isValidLoggableDate(s: string): boolean {
 
 const GENERIC_ERROR = "処理に失敗しました。時間をおいて再度お試しください。";
 
-// 日次目標（任意）のパース。空は null、それ以外は 1..MAX_COUNT の整数。
-function parseDailyGoal(
-  formData: FormData,
+// 日次目標（任意）の検証。null はそのまま、それ以外は 1..MAX_COUNT の整数。
+function normalizeDailyGoal(
+  raw: number | null | undefined,
 ): { ok: true; value: number | null } | { ok: false; error: string } {
-  const raw = String(formData.get("daily_goal") ?? "").trim();
-  if (raw === "") return { ok: true, value: null };
+  if (raw === null || raw === undefined) return { ok: true, value: null };
   const g = Math.floor(Number(raw));
   if (!Number.isFinite(g) || g <= 0 || g > MAX_COUNT) {
     return { ok: false, error: "目標は1以上の数値で入力してください。" };
@@ -49,12 +51,13 @@ function parseDailyGoal(
   return { ok: true, value: g };
 }
 
-export async function createCounter(
-  _prev: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  const name = String(formData.get("name") ?? "").trim();
-  const unit = String(formData.get("unit") ?? "回").trim() || "回";
+export async function createCounter(input: {
+  name: string;
+  unit: string;
+  dailyGoal: number | null;
+}): Promise<ActionResult<{ counter: Counter }>> {
+  const name = (input.name ?? "").trim();
+  const unit = (input.unit ?? "回").trim() || "回";
   if (!name) return { ok: false, error: "名称を入力してください。" };
   if (name.length > MAX_NAME_LEN) {
     return { ok: false, error: `名称は${MAX_NAME_LEN}文字以内で入力してください。` };
@@ -62,77 +65,80 @@ export async function createCounter(
   if (unit.length > MAX_UNIT_LEN) {
     return { ok: false, error: `単位は${MAX_UNIT_LEN}文字以内で入力してください。` };
   }
-  const goal = parseDailyGoal(formData);
+  const goal = normalizeDailyGoal(input.dailyGoal);
   if (!goal.ok) return goal;
 
   try {
     const { supabase, user } = await requireUser();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("counters")
-      .insert({ user_id: user.id, name, unit, daily_goal: goal.value });
-    if (error) return { ok: false, error: GENERIC_ERROR };
-    revalidatePath("/app");
-    return { ok: true };
+      .insert({ user_id: user.id, name, unit, daily_goal: goal.value })
+      .select("*")
+      .single();
+    if (error || !data) return { ok: false, error: GENERIC_ERROR };
+    return { ok: true, counter: data as Counter };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : GENERIC_ERROR };
   }
 }
 
-export async function renameCounter(
-  _prev: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  const id = String(formData.get("id") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
-  const unit = String(formData.get("unit") ?? "回").trim() || "回";
+export async function renameCounter(input: {
+  id: string;
+  name: string;
+  unit: string;
+  dailyGoal: number | null;
+}): Promise<ActionResult<{ counter: Counter }>> {
+  const id = input.id ?? "";
+  const name = (input.name ?? "").trim();
+  const unit = (input.unit ?? "回").trim() || "回";
   if (!id) return { ok: false, error: GENERIC_ERROR };
   if (!name) return { ok: false, error: "名称を入力してください。" };
   if (name.length > MAX_NAME_LEN || unit.length > MAX_UNIT_LEN) {
     return { ok: false, error: "名称または単位が長すぎます。" };
   }
-  const goal = parseDailyGoal(formData);
+  const goal = normalizeDailyGoal(input.dailyGoal);
   if (!goal.ok) return goal;
 
   try {
     const { supabase } = await requireUser();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("counters")
       .update({ name, unit, daily_goal: goal.value })
-      .eq("id", id);
-    if (error) return { ok: false, error: GENERIC_ERROR };
-    revalidatePath("/app");
-    return { ok: true };
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error || !data) return { ok: false, error: GENERIC_ERROR };
+    return { ok: true, counter: data as Counter };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : GENERIC_ERROR };
   }
 }
 
-export async function deleteCounter(
-  _prev: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  const id = String(formData.get("id") ?? "");
+export async function deleteCounter(input: {
+  id: string;
+}): Promise<ActionResult<{ id: string }>> {
+  const id = input.id ?? "";
   if (!id) return { ok: false, error: GENERIC_ERROR };
 
   try {
     const { supabase } = await requireUser();
     const { error } = await supabase.from("counters").delete().eq("id", id);
     if (error) return { ok: false, error: GENERIC_ERROR };
-    revalidatePath("/app");
-    return { ok: true };
+    return { ok: true, id };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : GENERIC_ERROR };
   }
 }
 
 // カウント記録の追加（指定日に count を加算する1レコード）
-export async function addLog(
-  _prev: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  const counterId = String(formData.get("counter_id") ?? "");
-  const count = Math.floor(Number(formData.get("count") ?? 0));
-  const loggedOn = String(formData.get("logged_on") ?? "");
+export async function addLog(input: {
+  counterId: string;
+  count: number;
+  loggedOn: string;
+}): Promise<ActionResult<{ log: CountLog }>> {
+  const counterId = input.counterId ?? "";
+  const count = Math.floor(Number(input.count ?? 0));
+  const loggedOn = input.loggedOn ?? "";
 
   if (!counterId) return { ok: false, error: GENERIC_ERROR };
   if (!Number.isFinite(count) || count <= 0) {
@@ -156,33 +162,34 @@ export async function addLog(
       .maybeSingle();
     if (!owned) return { ok: false, error: "対象のカウンターが見つかりません。" };
 
-    const { error } = await supabase.from("count_logs").insert({
-      counter_id: counterId,
-      user_id: user.id,
-      count,
-      logged_on: loggedOn,
-    });
-    if (error) return { ok: false, error: GENERIC_ERROR };
-    revalidatePath("/app");
-    return { ok: true };
+    const { data, error } = await supabase
+      .from("count_logs")
+      .insert({
+        counter_id: counterId,
+        user_id: user.id,
+        count,
+        logged_on: loggedOn,
+      })
+      .select("*")
+      .single();
+    if (error || !data) return { ok: false, error: GENERIC_ERROR };
+    return { ok: true, log: data as CountLog };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : GENERIC_ERROR };
   }
 }
 
-export async function deleteLog(
-  _prev: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  const id = String(formData.get("id") ?? "");
+export async function deleteLog(input: {
+  id: string;
+}): Promise<ActionResult<{ id: string }>> {
+  const id = input.id ?? "";
   if (!id) return { ok: false, error: GENERIC_ERROR };
 
   try {
     const { supabase } = await requireUser();
     const { error } = await supabase.from("count_logs").delete().eq("id", id);
     if (error) return { ok: false, error: GENERIC_ERROR };
-    revalidatePath("/app");
-    return { ok: true };
+    return { ok: true, id };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : GENERIC_ERROR };
   }

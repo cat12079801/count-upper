@@ -20,8 +20,8 @@ async function createAndSelectCounter(page: Page, name: string) {
     await page.getByRole("button", { name: "作成", exact: true }).click();
   }
 
-  // 作成したカウンターは自動選択されないため、チップをクリックして選択する。
-  await page.getByRole("link", { name, exact: true }).click();
+  // 作成後は自動選択されるが、選択を確実にするためチップをクリックする（冪等）。
+  await page.getByRole("button", { name, exact: true }).click();
 }
 
 test("主要フロー: 作成→記録→グラフ反映→削除→バリデーションエラー", async ({
@@ -31,7 +31,7 @@ test("主要フロー: 作成→記録→グラフ反映→削除→バリデー
 
   await test.step("カウンターを作成して選択する", async () => {
     await createAndSelectCounter(page, counterName);
-    await expect(page.getByRole("link", { name: counterName, exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: counterName, exact: true })).toBeVisible();
     // 記録前の合計は 0
     await expect(page.locator("span.text-6xl")).toHaveText("0");
   });
@@ -75,7 +75,7 @@ test("主要フロー: 作成→記録→グラフ反映→削除→バリデー
   });
 
   await test.step("後片付け: カウンターを削除する", async () => {
-    const chip = page.getByRole("link", { name: counterName, exact: true });
+    const chip = page.getByRole("button", { name: counterName, exact: true });
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByRole("button", { name: "編集", exact: true }).click();
     // 編集パネル内の赤いカウンター削除ボタン（ログ行の削除ボタンとは別）。
