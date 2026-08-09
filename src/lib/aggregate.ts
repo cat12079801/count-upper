@@ -4,6 +4,25 @@ import { monthRange } from "@/lib/date";
 export type ViewMode = "daily" | "monthly";
 export type ChartDatum = { label: string; value: number };
 
+// 全ログのキャッシュから、対象カウンター＋選択期間のログのみ抽出する。
+// aggregate() は期間で絞らない（logged_on を月/日に分解するだけ）ため、
+// 集計・表示の前に必ずこのフィルタを通す。
+export function filterPeriodLogs(
+  logs: CountLog[],
+  counterId: string,
+  view: ViewMode,
+  year: number,
+  month1to12: number,
+): CountLog[] {
+  const prefix =
+    view === "daily"
+      ? `${year}-${String(month1to12).padStart(2, "0")}`
+      : String(year);
+  return logs.filter(
+    (l) => l.counter_id === counterId && l.logged_on.startsWith(prefix),
+  );
+}
+
 export type Aggregation = {
   chart: ChartDatum[];
   total: number;
