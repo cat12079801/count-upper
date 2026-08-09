@@ -7,17 +7,17 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useTriggerRefresh } from "./RefreshContext";
 
 const THRESHOLD = 70; // これ以上引いたら更新
 const MAX_PULL = 110; // 見た目上の最大引っ張り量
 const DAMPING = 0.5; // 実移動量に対する減衰
 
 // PWA standalone 起動時の「引っ張って更新」。ブラウザ標準の pull-to-refresh は
-// standalone で無効化されるため自前実装する。全体リロードではなく router.refresh()
-// でサーバデータのみ再取得し、入力状態は保持する（TZ 方針とは無関係）。
+// standalone で無効化されるため自前実装する。ローカルファースト化に伴い、
+// サーバ再取得ではなくクライアントの裏取得（useAppData の refresh）を発火する。
 export function PullToRefresh({ children }: { children: ReactNode }) {
-  const router = useRouter();
+  const triggerRefresh = useTriggerRefresh();
   const [pull, setPull] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [isRefreshing, startTransition] = useTransition();
@@ -61,7 +61,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       startY.current = null;
       setDragging(false);
       if (pullRef.current >= THRESHOLD) {
-        startTransition(() => router.refresh());
+        startTransition(() => triggerRefresh());
       }
       setPull(0);
       pullRef.current = 0;
@@ -77,7 +77,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       window.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [isRefreshing, router]);
+  }, [isRefreshing, triggerRefresh]);
 
   const active = pull > 0 || isRefreshing;
   // 更新中は固定位置にスピナーを表示し、ドラッグ中は指に追従させる
